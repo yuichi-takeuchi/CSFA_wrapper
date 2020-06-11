@@ -1,0 +1,23 @@
+#ignore Matlab autosave files
+*.m~
+*.asv
+
+#ignore matlab binary files
+*.mat
+*.mlx
+*.fig
+
+#ignore image binary files
+*.png
+*.pdf
+*.jpg
+
+#ignore data binary files
+*.dat
+*.evt
+*.meta
+*.mp4
+*.nrs
+*.tsp
+*.xlsx
+*.docx
