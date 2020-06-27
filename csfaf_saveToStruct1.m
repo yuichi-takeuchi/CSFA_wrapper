@@ -1,9 +1,9 @@
-function electomef_saveToStruct1(obj, filename, flag)
+function csfaf_saveToStruct1(obj, filename, flag)
 %
 %    varname=inputname(1);
-% Copyright (c) Qun Lin 2019
+% Copyright (c) 2019 Qun Li, 2020 Yuichi Takeuchi
 
-    if nargin <3;
+    if nargin <3
         flag=0;
     end
 

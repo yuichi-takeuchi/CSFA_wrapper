@@ -1,4 +1,4 @@
-function electomef_trainCSFA2(loadFile,saveFile,modelOpts,trainOpts,chkptFile)
+function csfaf_trainCSFA2(loadFile,saveFile,modelOpts,trainOpts,chkptFile)
 % only training
 % Originally by Neil Gallagher
 % Modified by Yuichi 190724

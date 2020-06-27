@@ -1,4 +1,4 @@
-function electomef_trainCSFA1(loadFile,saveFile,modelOpts,trainOpts,chkptFile)
+function csfaf_trainCSFA1(loadFile,saveFile,modelOpts,trainOpts,chkptFile)
 % trainCSFA
 %   Trains a cross-spectral factor analysis (CSFA) model of the given LFP data. 
 %   Generally, the data are given as averaged signal over each recording area,

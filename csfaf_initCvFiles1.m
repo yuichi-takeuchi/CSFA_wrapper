@@ -1,4 +1,4 @@
-function electomef_initCvFiles1(datafile)
+function csfaf_initCvFiles1(datafile)
 % initCvFiles
 % initializes model files for k-fold test sets
 %

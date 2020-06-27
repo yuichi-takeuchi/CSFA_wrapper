@@ -1,5 +1,5 @@
 % modified from preprocessDeap by Qun (2018), Yuichi (2019)
-function electomef_xFft1(saveFile,dataOpts)
+function csfaf_xFft1(saveFile,dataOpts)
 % preprocessDeap
 %   Preprocesses data saved in saveFile. Typically run after prerocess_cutdata.
 %
