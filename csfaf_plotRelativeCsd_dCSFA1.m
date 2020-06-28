@@ -1,4 +1,4 @@
-    function electomef_plotRelativeCsd_dCSFA1(self,l,varargin)
+    function csfaf_plotRelativeCsd_dCSFA1(self,l,varargin)
     % modify by Qun (based on plotRelativeCsd, which is non-supervised result plot )
     
       % plot the spectral density normalized accross all factors.

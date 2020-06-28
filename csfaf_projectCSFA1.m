@@ -1,4 +1,4 @@
-function electomef_projectCSFA1(loadFile,saveFile,modelOpts,trainOpts,chkptFile)
+function csfaf_projectCSFA1(loadFile,saveFile,modelOpts,trainOpts,chkptFile)
 % The following is documentation of the original trainCSFA function
 % trainCSFA
 %   Trains a cross-spectral factor analysis (CSFA) model of the given LFP data. 
