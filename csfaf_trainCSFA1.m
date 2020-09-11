@@ -1,4 +1,4 @@
-function csfaf_trainCSFA1(loadFile,saveFile,modelOpts,trainOpts,chkptFile)
+function [chkptFile] = csfaf_trainCSFA1(loadFile,saveFile,modelOpts,trainOpts,chkptFile)
 % trainCSFA
 %   Trains a cross-spectral factor analysis (CSFA) model of the given LFP data. 
 %   Generally, the data are given as averaged signal over each recording area,
@@ -207,7 +207,8 @@ function csfaf_trainCSFA1(loadFile,saveFile,modelOpts,trainOpts,chkptFile)
     initScores = modelRefit.scores;
     k = k-1;
   end
-  disp('initial training done')
+  save(saveFile,'projModels','trainModels','evals',...
+      'modelOpts','trainOpts','sets')
 end
 
 function sets = loadSets(saveFile,loadFile,nWin)
