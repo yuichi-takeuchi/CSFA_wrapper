@@ -1,4 +1,4 @@
-function [chkptFile] = csfaf_trainCSFA1(loadFile,saveFile,modelOpts,trainOpts,chkptFile)
+function [chkptFile] = csfaf_trainCSFA1(loadFile,saveFile,modelOpts,trainOpts,kernelLrnng,scoreLrnng,chkptFile)
 % trainCSFA
 %   Trains a cross-spectral factor analysis (CSFA) model of the given LFP data. 
 %   Generally, the data are given as averaged signal over each recording area,
@@ -113,33 +113,32 @@ function [chkptFile] = csfaf_trainCSFA1(loadFile,saveFile,modelOpts,trainOpts,ch
 % Example1: TrainCSFA('data/dataStore.mat','data/modelFile.mat',mOpts,tOpts)
 % Example2: TrainCSFA('data/dataStore.mat','data/Mhold.mat',[],[],'data/chkpt_81LNf_Mhold.mat')
 
-  % Add .mat extension if filenames don't already include them
-  saveFile = addExt(saveFile);
-  loadFile = addExt(loadFile);
+% Add .mat extension if filenames don't already include them
+saveFile = addExt(saveFile);
+loadFile = addExt(loadFile);
 
-  % initialize options structures if not given as inputs
-  if nargin < 4
+% initialize options structures if not given as inputs
+if nargin < 4
     trainOpts = [];
-  end
-  if nargin < 3
+end
+if nargin < 3
     modelOpts = [];
-  end
+end
 
-  % load data and associated info
-  load(loadFile,'xFft','labels')
-  nWin = size(xFft,3);
+% load data and associated info
+load(loadFile,'xFft','labels')
+nWin = size(xFft,3);
 
-  sets = loadSets(saveFile,loadFile,nWin); % skipped by Yuichi 190724
-%   load(saveFile, 'sets') % appended, by Yuichi 190724
-  
-  if nargin < 5
+sets = loadSets(saveFile,loadFile,nWin);
+
+if nargin < 7
     % initialize matfile for checkpointing
-    %chkptFile = generateCpFilename(saveFile)
-    chkptFile = saveFile;% modified by Qun
+    chkptFile = generateCpFilename(saveFile)
+    %     chkptFile = saveFile;% modified by Qun
     save(chkptFile,'modelOpts','trainOpts','sets')
-  else
+else
     % load info from checkpoint file
-    chkptFile = addExt(chkptFile)
+    chkptFile = addExt(chkptFile);
     cp = load(chkptFile,'-mat');
     modelOpts = cp.modelOpts;
     trainOpts = cp.trainOpts;
@@ -147,87 +146,96 @@ function [chkptFile] = csfaf_trainCSFA1(loadFile,saveFile,modelOpts,trainOpts,ch
     if isfield(cp,'trainModels'), trainModels = cp.trainModels; end
     if isfield(cp,'projModels'), projModels = cp.projModels; end
     if isfield(cp,'evals'), evals = cp.evals; end
-  end
+end
 
-  % fill in default options and remaining parameters
-  modelOpts.C = size(xFft,2); % number of signals
-  modelOpts.W = sum(sets.train);    % # of windows
-  modelOpts = fillDefaultMopts(modelOpts);
-  trainOpts = fillDefaultTopts(trainOpts);
+% fill in default options and remaining parameters
+modelOpts.C = size(xFft,2); % number of signals
+modelOpts.W = sum(sets.train);    % # of windows
+modelOpts = fillDefaultMopts(modelOpts);
+trainOpts = fillDefaultTopts(trainOpts);
 
-  %% Kernel learning
-  % train kernels if they haven't been loaded from chkpt file
-  if ~exist('projModels','var') && (~exist('trainIter','var') || trainIter~=Inf)
-    
+%% Kernel learning
+% % train kernels if they haven't been loaded from chkpt file
+% if ~exist('projModels','var') && (~exist('trainIter','var') || trainIter~=Inf)
+if kernelLrnng    
     if exist('trainModels','var') % implies chkptFile was loaded
-      model = trainModels(end);
+        model = trainModels(end);
     else
-      model = initModel(modelOpts,labels,sets)
+        model = initModel(modelOpts,labels,sets)
     end
     
     % update model via gradient descent
     [evals, trainModels] = trainOpts.algorithm(labels.s,xFft(:,:,sets.train),model,...
                                             trainOpts,chkptFile);  
-    fprintf('Kernel Training Complete\n')
-  end
+    fprintf('Kernel learning Complete\n')
+end
 
-  %% Score learning
-  % Fix kernels and learn scores to convergence
-  
-  % initialize variables for projection
-  nModels = numel(trainModels);
-  if exist('projModels','var')
-    % happens if there are checkpointed projection models
-    k = nModels - sum(~isempty(projModels));
-    initScores = projModels(k+1).scores;
-  else
-    k = nModels;
-    % initialize projected scores with training set scores
-    initScores = nan(modelOpts.L,nWin);
-    initScores(:,sets.train) = trainModels(k).scores;
-  end
-  
-  while k >= lastTrainIdx(nModels,trainOpts.projectAll)
-    if isa(trainModels(k),'GP.CSFA')
-      thisTrainModel = trainModels(k);
-    else
-      thisTrainModel = trainModels(k).kernel;
+%% Score learning
+if scoreLrnng
+    % Fix kernels and learn scores to convergence
+    % initialize variables for projection
+    nModels = numel(trainModels);
+%     if exist('projModels','var')
+%         % happens if there are checkpointed projection models
+%         k = nModels - sum(~isempty(projModels));
+%         initScores = projModels(k+1).scores;
+%     else
+        k = nModels;
+        % initialize projected scores with training set scores
+        initScores = nan(modelOpts.L,nWin);
+        if size(initScores,2) == trainModels(k).scores
+            initScores(:,sets.train) = trainModels(k).scores;
+        end
+%     end
+
+    while k >= lastTrainIdx(nModels,trainOpts.projectAll)
+        if isa(trainModels(k),'GP.CSFA')
+            thisTrainModel = trainModels(k);
+        else
+            thisTrainModel = trainModels(k).kernel;
+        end
+
+        a = tic;
+        modelRefit = projectCSFA(xFft,thisTrainModel,labels.s,trainOpts,...
+            initScores);
+        fprintf('Projected model %d: %.1fs\n',k,toc(a))
+        projModels(k) = modelRefit.copy;
+
+        save(chkptFile,'projModels','trainModels','evals',...
+          'modelOpts','trainOpts','sets')
+
+        % initialize next model with scores from current model
+        initScores = modelRefit.scores;
+        k = k-1;
     end
-    
-    a = tic;
-    modelRefit = projectCSFA(xFft,thisTrainModel,labels.s,trainOpts,...
-        initScores);
-    fprintf('Projected model %d: %.1fs\n',k,toc(a))
-    projModels(k) = modelRefit.copy;
-
-    save(chkptFile,'projModels','trainModels','evals',...
+    fprintf('Score learning Complete\n')
+end
+if not(nargin < 7)
+    chkptFile = generateCpFilename(saveFile)
+end
+save(chkptFile,'projModels','trainModels','evals',...
       'modelOpts','trainOpts','sets')
-
-    % initialize next model with scores from current model
-    initScores = modelRefit.scores;
-    k = k-1;
-  end
-  save(saveFile,'projModels','trainModels','evals',...
+save(saveFile,'projModels','trainModels','evals',...
       'modelOpts','trainOpts','sets')
 end
 
 function sets = loadSets(saveFile,loadFile,nWin)
 % load validation set options
 
-if exist(saveFile,'file')
-  load(saveFile,'sets')
-% allow user to set sets.train to true for training set
-% to include all data
-  if sets.train == true
-    sets.train = true(1,nWin);
-  end
-else
+% if exist(saveFile,'file')
+%   load(saveFile,'sets')
+% % allow user to set sets.train to true for training set
+% % to include all data
+%   if sets.train == true
+%     sets.train = true(1,nWin);
+%   end
+% else
   sets.train = false(1,nWin);
   sets.train(randperm(nWin,floor(0.8*nWin))) = 1;
   sets.test = ~sets.train;
   sets.description = '80/20 split';
   sets.datafile = loadFile;
-end
+% end
 end
 
 function model = initModel(modelOpts,labels,sets)
