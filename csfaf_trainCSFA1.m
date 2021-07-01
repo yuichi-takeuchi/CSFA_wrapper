@@ -157,7 +157,7 @@ trainOpts = fillDefaultTopts(trainOpts);
 %% Kernel learning
 % % train kernels if they haven't been loaded from chkpt file
 % if ~exist('projModels','var') && (~exist('trainIter','var') || trainIter~=Inf)
-if kernelLrnng    
+% if kernelLrnng    
     if exist('trainModels','var') % implies chkptFile was loaded
         model = trainModels(end);
     else
@@ -168,7 +168,7 @@ if kernelLrnng
     [evals, trainModels] = trainOpts.algorithm(labels.s,xFft(:,:,sets.train),model,...
                                             trainOpts,chkptFile);  
     fprintf('Kernel learning Complete\n')
-end
+% ensd
 
 %% Score learning
 if scoreLrnng
