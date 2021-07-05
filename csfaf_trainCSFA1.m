@@ -171,7 +171,7 @@ trainOpts = fillDefaultTopts(trainOpts);
 % ensd
 
 %% Score learning
-if scoreLrnng
+% if scoreLrnng
     % Fix kernels and learn scores to convergence
     % initialize variables for projection
     nModels = numel(trainModels);
@@ -209,7 +209,7 @@ if scoreLrnng
         k = k-1;
     end
     fprintf('Score learning Complete\n')
-end
+% end
 if not(nargin < 7)
     chkptFile = generateCpFilename(saveFile)
 end
