@@ -118,10 +118,13 @@ saveFile = addExt(saveFile);
 loadFile = addExt(loadFile);
 
 % initialize options structures if not given as inputs
-if nargin < 4
+% if nargin < 4
+if ~exist('trainOpts','var')
     trainOpts = [];
 end
-if nargin < 3
+
+% if nargin < 3
+if ~exist('modelOpts','var')
     modelOpts = [];
 end
 
@@ -131,7 +134,8 @@ nWin = size(xFft,3);
 
 sets = loadSets(saveFile,loadFile,nWin);
 
-if nargin < 7
+% if nargin < 7
+if ~exist('chkptFile','var')
     % initialize matfile for checkpointing
     chkptFile = generateCpFilename(saveFile)
     %     chkptFile = saveFile;% modified by Qun
@@ -154,10 +158,10 @@ modelOpts.W = sum(sets.train);    % # of windows
 modelOpts = fillDefaultMopts(modelOpts);
 trainOpts = fillDefaultTopts(trainOpts);
 
-%% Kernel learning
+% Kernel learning
 % % train kernels if they haven't been loaded from chkpt file
 % if ~exist('projModels','var') && (~exist('trainIter','var') || trainIter~=Inf)
-% if kernelLrnng    
+if ~exist('kernelLrnng','var') || kernelLrnng
     if exist('trainModels','var') % implies chkptFile was loaded
         model = trainModels(end);
     else
@@ -168,10 +172,10 @@ trainOpts = fillDefaultTopts(trainOpts);
     [evals, trainModels] = trainOpts.algorithm(labels.s,xFft(:,:,sets.train),model,...
                                             trainOpts,chkptFile);  
     fprintf('Kernel learning Complete\n')
-% ensd
+end
 
-%% Score learning
-% if scoreLrnng
+% Score learning
+if ~exist('scoreLrnng','var') || scoreLrnng
     % Fix kernels and learn scores to convergence
     % initialize variables for projection
     nModels = numel(trainModels);
@@ -209,8 +213,10 @@ trainOpts = fillDefaultTopts(trainOpts);
         k = k-1;
     end
     fprintf('Score learning Complete\n')
-% end
-if not(nargin < 7)
+end
+
+% if not(nargin < 7)
+if ~exist('chkptFile','var')
     chkptFile = generateCpFilename(saveFile)
 end
 save(chkptFile,'projModels','trainModels','evals',...
